@@ -35,13 +35,22 @@ class RsDanglingElseInspection : RsLocalInspectionTool() {
                     .dropWhile { it !is RsIfExpr }
                     .firstOrNull() ?: return
                 val range = TextRange(0, ifEl.startOffsetInParent + 2)
-                val fix2Range = TextRange(elseEl.textRange.endOffset, ifEl.textRange.startOffset)
+                val container = expr.parent
                 holder.registerProblem(
                     expr,
                     range,
                     "Suspicious `else if` formatting",
-                    SubstituteTextFix(elseEl.rangeWithPrevSpace(expr.prevSibling), null, "Remove `else`"),
-                    SubstituteTextFix(fix2Range, " ", "Join `else if`"))
+                    SubstituteTextFix.delete(
+                        "Remove `else`",
+                        container,
+                        elseEl.rangeWithPrevSpace(expr.prevSibling).shiftRight(-container.textRange.startOffset)
+                    ),
+                    SubstituteTextFix.replace(
+                        "Join `else if`",
+                        container,
+                        TextRange(elseEl.textRange.endOffset, ifEl.textRange.startOffset).shiftRight(-container.textRange.startOffset),
+                        " "
+                    ))
             }
         }
 
